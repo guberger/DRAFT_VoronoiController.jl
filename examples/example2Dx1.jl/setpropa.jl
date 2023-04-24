@@ -65,13 +65,11 @@ end
 terminal = VC.rectangle(
     float(env["termSet"]["lb"]) .- 0.01, float(env["termSet"]["ub"]) .+ 0.01, lib
 )
-transients = VC.complement(terminal, lib)
+transients = VC.sequential_complement(halfspaces(terminal), lib)
 
 sets = [VC.rectangle(
     float(env["initSet"]["lb"]), float(env["initSet"]["ub"]), lib
 )]
-
-unsafes = VC.complement(safe, lib)
 
 nstep = 100
 for istep = 1:nstep

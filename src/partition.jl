@@ -25,15 +25,39 @@ function voronoi_partition(points, lib)
 end
 
 function complement(p, lib)
+    ps = Polyhedron[]
+    hs = halfspaces(p)
+    for id in Iterators.product([(0, 1) for i in eachindex(hs)]...)
+        all(isone, id) && continue
+        H = HalfSpace{Float64,Vector{Float64}}[]
+        for (i, h) in enumerate(hs)
+            if id[i] == 0
+                push!(H, HalfSpace(-h.a, -h.β))
+            else
+                push!(H, HalfSpace(+h.a, +h.β))
+            end
+        end
+        p = polyhedron(hrep(H), lib)
+        removehredundancy!(p)
+        isempty(p) && continue
+        push!(ps, p)
+    end
+    return ps
+end
+
+function sequential_complement(hs, lib)
     acc = HalfSpace{Float64,Vector{Float64}}[]
     ps = Polyhedron[]
-    for h in halfspaces(p)
+    for h in hs
         H = hrep([HalfSpace(-h.a, -h.β)])
         if !isempty(acc)
             H = intersect(H, hrep(acc))
         end
-        push!(ps, polyhedron(H, lib))
         acc = push!(acc, h)
+        p = polyhedron(H, lib)
+        removehredundancy!(p)
+        isempty(p) && continue
+        push!(ps, p)
     end
     return ps
 end

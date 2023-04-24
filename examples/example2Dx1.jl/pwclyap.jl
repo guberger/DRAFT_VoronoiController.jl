@@ -86,8 +86,8 @@ for old_piece in old_pieces
     end
 end
 
-np1 = 3
-np2 = 3
+np1 = 4
+np2 = 4
 x1min = minimum(x -> getindex(x, 1), Polyhedra.points(vrep(safe)))
 x1max = maximum(x -> getindex(x, 1), Polyhedra.points(vrep(safe)))
 x1s = range(x1min, x1max, length=np1)
@@ -124,7 +124,6 @@ for initial in initials
 end
 
 unsafes = VC.complement(safe, lib)
-display(length(unsafes))
 frame = VC.rectangle(float([-2, -2]), float([2, 2]), lib)
 for unsafe in unsafes
     for unsafe in unsafes
@@ -228,7 +227,6 @@ end
 
 for (i, piece) in enumerate(graph.pieces)
     # positive: hatched
-    # continue
     H = hrep([HalfSpace(-as[i], 0 + βs[i])])
     p = intersect(piece.domain, H)
     isempty(p) && continue
