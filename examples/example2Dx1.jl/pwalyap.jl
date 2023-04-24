@@ -247,7 +247,7 @@ for edge in graph.unsafe_edges
     display((as[edge.source], βs[edge.source]))
 end
 
-savefig(string(@__DIR__, "/lyap.png"))
+savefig(string(@__DIR__, "/data/lyap.png"))
 display(plt)
 
 end # module

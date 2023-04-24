@@ -75,6 +75,7 @@ unsafes = VC.complement(safe, lib)
 
 nstep = 100
 for istep = 1:nstep
+    isempty(sets) && break
     plt = plot(xlabel="x1", ylabel="x2")
     for cell in cells
         plot!(cell, fc=nothing, lc=:red)
@@ -114,25 +115,8 @@ for istep = 1:nstep
     for set in new_sets
         plot!(set, fc=nothing, lc=:blue)
     end
-    savefig(string(@__DIR__, "/set_", @sprintf("%03i", istep), ".png"))
+    savefig(string(@__DIR__, "/data/set_", @sprintf("%03i", istep), ".png"))
     global sets = new_sets
 end
-
-# old_pieces = pieces
-# pieces = VC.Piece[]
-# for old_piece in old_pieces
-#     domain = intersect(old_piece.domain, hrep(terminal))
-#     if isempty(domain)
-#         push!(pieces, old_piece)
-#         continue
-#     end
-#     for transient in transients
-#         domain = intersect(old_piece.domain, hrep(transient))
-#         removehredundancy!(domain)
-#         isempty(domain) && continue
-#         push!(pieces, VC.Piece(domain, old_piece.dynamic))
-#     end
-# end
-
 
 end # module
