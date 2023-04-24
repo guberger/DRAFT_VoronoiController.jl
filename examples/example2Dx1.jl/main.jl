@@ -10,9 +10,8 @@ const optimizer = optimizer_with_attributes(
     () -> Gurobi.Optimizer(GUROBI_ENV), "OutputFlag"=>false
 )
 solver() = Model(optimizer)
-lib = DefaultLibrary{Float64}(optimizer)
+const lib = DefaultLibrary{Float64}(optimizer)
 
-using Plots
 using YAML
 using CSV
 using DataFrames
@@ -25,12 +24,13 @@ controller = CSV.read(string(@__DIR__, "/counterExamples.csv"), DataFrame)
 
 N = env["numStateDim"]
 
+using Plots
+
 plt = plot(xlabel="x1", ylabel="x2")
 
 safe = VC.rectangle(
     float(env["workspace"]["lb"]), float(env["workspace"]["ub"]), lib
 )
-
 plot!(safe, fc=nothing)
 
 samples = [
@@ -41,10 +41,10 @@ samples = [
         zip(controller.b1, controller.b2)
     )
 ]
-# for sample in samples
-#     sample[2] .= [0.5 -0.1; 0.2 0.75]
-#     sample[3] .= zeros(N)
-# end
+for sample in samples
+    sample[2] .= [0.95 -0.2; 0.2 0.75]
+    sample[3] .= zeros(N)
+end
 points = getindex.(samples, 1)
 
 cells = VC.voronoi_partition(points, lib)
@@ -58,8 +58,7 @@ for (point, A, b) in samples
     iok = 0
     for (i, cell) in enumerate(cells)
         point ∉ cell && continue
-        iok = i
-        break
+        iok = i; break
     end
     @assert iok > 0
     push!(pieces, VC.Piece(cells[iok], VC.Dynamic(A, b)))
@@ -71,7 +70,6 @@ terminal = VC.rectangle(
 plot!(terminal, fa=0.1)
 
 transients = VC.complement(terminal, lib)
-
 old_pieces = pieces
 pieces = VC.Piece[]
 for old_piece in old_pieces
@@ -88,8 +86,8 @@ for old_piece in old_pieces
     end
 end
 
-np1 = 15
-np2 = 15
+np1 = 4
+np2 = 4
 x1min = minimum(x -> getindex(x, 1), Polyhedra.points(vrep(safe)))
 x1max = maximum(x -> getindex(x, 1), Polyhedra.points(vrep(safe)))
 x1s = range(x1min, x1max, length=np1)
@@ -126,15 +124,13 @@ for initial in initials
 end
 
 unsafes = VC.complement(safe, lib)
-
-ambient = VC.rectangle(float([-2, -2]), float([2, 2]), lib)
+frame = VC.rectangle(float([-2, -2]), float([2, 2]), lib)
 for unsafe in unsafes
     for unsafe in unsafes
-        intersect!(unsafe, hrep(ambient))
+        intersect!(unsafe, hrep(frame))
         removehredundancy!(unsafe)
     end
 end
-
 for unsafe in unsafes
     plot!(unsafe, fa=0.2, fc=:red, ls=:dash)
 end
@@ -146,7 +142,7 @@ graph = VC.transition_graph(pieces, unsafes, initials)
 iplot = rand(1:length(graph.pieces))*0
 for edge in graph.piece_edges
     i1, i2 = edge.source, edge.target
-    # i1 != iplot && continue
+    i1 != iplot && continue
     cell1, cell2 = graph.pieces[i1].domain, graph.pieces[i2].domain
     dynamic1 = graph.pieces[i1].dynamic
     postcell1 = Polyhedra.translate(dynamic1.A*cell1, dynamic1.b)
@@ -206,7 +202,7 @@ display((ymin, ymax))
 
 nlev = 50
 for (i, piece) in enumerate(graph.pieces)
-    continue
+    # continue
     points = Polyhedra.points(vrep(piece.domain))
     ylocmax = maximum(x -> dot(as[i], x) + βs[i], points)
     ylocmin = minimum(x -> dot(as[i], x) + βs[i], points)
@@ -225,24 +221,33 @@ for (i, piece) in enumerate(graph.pieces)
         p = intersect(piece.domain, H)
         isempty(p) && continue
         midlev = 0.5*(levs[ilev] + levs[ilev + 1])
-        plot!(p, fill_z=midlev, fc=cgrad(scale=(ymin, ymax)), lc=nothing)
+        plot!(p, fill_z=midlev, fc=cgrad(scale=(ymin, ymax)), line_z=midlev)
     end
 end
 
 for (i, piece) in enumerate(graph.pieces)
-    H = hrep([
-            HalfSpace(+as[i], +0 - βs[i]),
-            HalfSpace(-as[i], -ymin + 1 + βs[i])
-        ])
+    # positive: hatched
+    H = hrep([HalfSpace(-as[i], 0 + βs[i])])
     p = intersect(piece.domain, H)
     isempty(p) && continue
-    plot!(p, ls=:dot, lc=:green, fc=nothing)
+    plot!(p, lw=0, fc=:green, fillstyle=:/)
+end
+
+for (i, piece) in enumerate(graph.pieces)
+    # negative: image
+    H = hrep([HalfSpace(+as[i], 0 - βs[i])])
+    p = intersect(piece.domain, H)
+    isempty(p) && continue
+    dynamic = graph.pieces[i].dynamic
+    postp = Polyhedra.translate(dynamic.A*p, dynamic.b)
+    plot!(postp, fc=nothing)
 end
 
 for edge in graph.unsafe_edges
     display((as[edge.source], βs[edge.source]))
 end
 
+savefig(string(@__DIR__, "/img.png"))
 display(plt)
 
 end # module
