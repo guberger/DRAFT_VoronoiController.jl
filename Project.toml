@@ -1,0 +1,4 @@
+name = "VoronoiController"
+uuid = "cc2adf28-130e-443b-8133-259c165985fd"
+authors = ["guberger <guillaume.berger@colorado.edu>"]
+version = "0.1.0"
