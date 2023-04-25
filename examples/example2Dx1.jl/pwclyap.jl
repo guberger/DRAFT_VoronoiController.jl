@@ -27,9 +27,7 @@ N = env["numStateDim"]
 
 using Plots
 
-safe = VC.rectangle(
-    float(env["workspace"]["lb"]), float(env["workspace"]["ub"]), lib
-)
+safe = VC.rectangle(env["workspace"]["lb"], env["workspace"]["ub"], lib)
 
 samples = [
     (collect(x), reshape(collect(a), 2, 2), reshape(collect(b), 2))
@@ -62,9 +60,7 @@ for (point, A, b) in samples
     push!(pieces, VC.Piece(cells[iok], VC.Dynamic(A, b)))
 end
 
-terminal = VC.rectangle(
-    float(env["termSet"]["lb"]), float(env["termSet"]["ub"]), lib
-)
+terminal = VC.rectangle(env["termSet"]["lb"], env["termSet"]["ub"], lib)
 
 transients = VC.complement(terminal, lib)
 old_pieces = pieces
@@ -79,12 +75,10 @@ for old_piece in old_pieces
     end
 end
 
-initials = [VC.rectangle(
-    float(env["initSet"]["lb"]), float(env["initSet"]["ub"]), lib
-)]
+initials = [VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)]
 
 unsafes = VC.complement(safe, lib)
-frame = VC.rectangle(float([-2, -2]), float([2, 2]), lib)
+frame = VC.rectangle([-2, -2], [2, 2], lib)
 for unsafe in unsafes
     for unsafe in unsafes
         intersect!(unsafe, hrep(frame))
@@ -92,12 +86,8 @@ for unsafe in unsafes
     end
 end
 
-graph = VC.transition_graph(pieces, unsafes, initials)
-
-
 nstep = 10
 for istep = 1:nstep
-    isempty(graph.unsafe_edges) && break
     plot(xlabel="x1", ylabel="x2")
     plot!(xlims=(-2.05, 2.05), ylims=(-2.05, 2.05))
     for initial in initials
@@ -111,7 +101,6 @@ for istep = 1:nstep
     for unsafe in unsafes
         plot!(unsafe, fa=0.2, fc=:red, ls=:dash)
     end
-
     fname = string("pwclyap_", @sprintf("%03i", istep), ".png")
     savefig(string(@__DIR__, "/data/", fname))
 end

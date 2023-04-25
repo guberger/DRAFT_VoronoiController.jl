@@ -26,9 +26,7 @@ N = env["numStateDim"]
 
 using Plots
 
-safe = VC.rectangle(
-    float(env["workspace"]["lb"]), float(env["workspace"]["ub"]), lib
-)
+safe = VC.rectangle(env["workspace"]["lb"], env["workspace"]["ub"], lib)
 
 samples = [
     (collect(x), reshape(collect(a), 2, 2), reshape(collect(b), 2))
@@ -62,14 +60,30 @@ for (point, A, b) in samples
     push!(pieces, VC.Piece(cells[iok], VC.Dynamic(A, b)))
 end
 
-terminal = VC.rectangle(
-    float(env["termSet"]["lb"]) .- 0.01, float(env["termSet"]["ub"]) .+ 0.01, lib
-)
-transients = VC.sequential_complement(halfspaces(terminal), lib)
+function sequential_complement(hs::Vector{HalfSpace}, lib)
+    
+end
 
-sets = [VC.rectangle(
-    float(env["initSet"]["lb"]), float(env["initSet"]["ub"]), lib
-)]
+terminal = VC.rectangle(
+    env["termSet"]["lb"] .- 0.01, env["termSet"]["ub"] .+ 0.01, lib
+)
+
+# transients
+acc = HalfSpace{Float64,Vector{Float64}}[]
+transients = Polyhedron[]
+for h in halfspaces(terminal)
+    H = hrep([HalfSpace(-h.a, -h.β)])
+    if !isempty(acc)
+        H = intersect(H, hrep(acc))
+    end
+    push!(acc, h)
+    transient = polyhedron(H, lib)
+    removehredundancy!(transient)
+    isempty(transient) && continue
+    push!(transients, transient)
+end
+
+sets = [VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)]
 
 nstep = 100
 for istep = 1:nstep

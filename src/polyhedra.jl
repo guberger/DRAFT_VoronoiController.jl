@@ -1,4 +1,4 @@
-function rectangle(lb, ub, lib)
+function rectangle(lb, ub, lib)::Polyhedron
     bb = zip(lb, ub)
     N = length(bb)
     hs = HalfSpace{Float64,Vector{Float64}}[]
@@ -6,7 +6,7 @@ function rectangle(lb, ub, lib)
         push!(hs, HalfSpace(_hot(+1.0, i, N), +xu))
         push!(hs, HalfSpace(_hot(-1.0, i, N), -xl))
     end
-    return polyhedron(hrep(hs), lib)::Polyhedron
+    return polyhedron(hrep(hs), lib)
 end
 
 function voronoi_partition(points, lib)
@@ -38,23 +38,6 @@ function complement(p, lib)
             end
         end
         p = polyhedron(hrep(H), lib)
-        removehredundancy!(p)
-        isempty(p) && continue
-        push!(ps, p)
-    end
-    return ps
-end
-
-function sequential_complement(hs, lib)
-    acc = HalfSpace{Float64,Vector{Float64}}[]
-    ps = Polyhedron[]
-    for h in hs
-        H = hrep([HalfSpace(-h.a, -h.β)])
-        if !isempty(acc)
-            H = intersect(H, hrep(acc))
-        end
-        acc = push!(acc, h)
-        p = polyhedron(H, lib)
         removehredundancy!(p)
         isempty(p) && continue
         push!(ps, p)

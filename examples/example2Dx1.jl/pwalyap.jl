@@ -28,9 +28,7 @@ using Plots
 
 plt = plot(xlabel="x1", ylabel="x2")
 
-safe = VC.rectangle(
-    float(env["workspace"]["lb"]), float(env["workspace"]["ub"]), lib
-)
+safe = VC.rectangle(env["workspace"]["lb"], env["workspace"]["ub"], lib)
 plot!(safe, fc=nothing)
 
 samples = [
@@ -64,9 +62,7 @@ for (point, A, b) in samples
     push!(pieces, VC.Piece(cells[iok], VC.Dynamic(A, b)))
 end
 
-terminal = VC.rectangle(
-    float(env["termSet"]["lb"]), float(env["termSet"]["ub"]), lib
-)
+terminal = VC.rectangle(env["termSet"]["lb"], env["termSet"]["ub"], lib)
 plot!(terminal, fa=0.1)
 
 transients = VC.complement(terminal, lib)
@@ -116,16 +112,14 @@ for piece in pieces
     scatter!([x[1]], [x[2]], mc=c)
 end
 
-initials = [VC.rectangle(
-    float(env["initSet"]["lb"]), float(env["initSet"]["ub"]), lib
-)]
+initials = [VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)]
 for initial in initials
     plot!(initial, fa=0.1, lc=nothing)
 end
 
 unsafes = VC.complement(safe, lib)
 display(length(unsafes))
-frame = VC.rectangle(float([-2, -2]), float([2, 2]), lib)
+frame = VC.rectangle([-2, -2], [2, 2], lib)
 for unsafe in unsafes
     for unsafe in unsafes
         intersect!(unsafe, hrep(frame))

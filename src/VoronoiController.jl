@@ -40,6 +40,6 @@ end
 include("polyhedra.jl")
 include("graph.jl")
 include("pwalyapunov.jl")
-# include("pwclyapunov.jl")
+include("pwclyapunov.jl")
 
 end # module VoronoiController
