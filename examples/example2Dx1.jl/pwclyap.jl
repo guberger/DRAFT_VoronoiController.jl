@@ -75,7 +75,7 @@ for old_piece in old_pieces
     end
 end
 
-initials = [VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)]
+initial = VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)
 
 unsafes = VC.complement(safe, lib)
 frame = VC.rectangle([-2, -2], [2, 2], lib)
@@ -86,23 +86,24 @@ for unsafe in unsafes
     end
 end
 
-nstep = 10
-for istep = 1:nstep
-    plot(xlabel="x1", ylabel="x2")
-    plot!(xlims=(-2.05, 2.05), ylims=(-2.05, 2.05))
-    for initial in initials
-        plot!(initial, fa=0.1, lc=nothing)
-    end
-    for piece in pieces
-        plot!(piece.domain, fc=nothing, lc=:red)
-    end
-    plot!(safe, fc=nothing)
-    plot!(terminal, fc=nothing, ls=:dot)
-    for unsafe in unsafes
-        plot!(unsafe, fa=0.2, fc=:red, ls=:dash)
-    end
-    fname = string("pwclyap_", @sprintf("%03i", istep), ".png")
-    savefig(string(@__DIR__, "/data/", fname))
+plt = plot(xlabel="x1", ylabel="x2")
+plot!(xlims=(-2.05, 2.05), ylims=(-2.05, 2.05))
+
+for piece in pieces
+    plot!(piece.domain, fc=nothing, lc=:red)
 end
+
+plot!(safe, fc=nothing)
+
+plot!(terminal, fc=nothing, ls=:dot)
+for initial in initials
+    plot!(initial, fc=nothing, ls=:dash)
+end
+
+for unsafe in unsafes
+    plot!(unsafe, fa=0.2, fc=:red, ls=:dash)
+end
+
+display(plt)
 
 end # module

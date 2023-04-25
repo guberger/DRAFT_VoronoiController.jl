@@ -18,12 +18,22 @@ end
 
 function intersection_graph(sets1, sets2)
     edges = Edge[]
-    for (i1, set1) in enumerate(sets1)
-        for (i2, set2) in enumerate(sets2)
-            hit = intersect(set1, hrep(set2))
-            isempty(hit) && continue
+    for (i2, set2) in enumerate(sets2)
+        supp = intersection_support(sets1, set2)
+        for i1 in supp
             push!(edges, Edge(i1, i2))
         end
     end
     return Graph(edges)
+end
+
+function intersection_support(sets1, set2)
+    supp = BitSet()
+    H = hrep(set2)
+    for (i1, set1) in enumerate(sets1)
+        hit = intersect(set1, H)
+        isempty(hit) && continue
+        push!(supp, i1)
+    end
+    return supp
 end

@@ -2,10 +2,10 @@ struct PWALyapunovProblem
     npiece::Int
     domains::Vector{Polyhedron}
     dynamics::Vector{Dynamic}
-    initials::Vector{Polyhedron}
+    initial::Polyhedron
     unsafes::Vector{Polyhedron}
     graph_piece::Graph
-    graph_initial::Graph
+    support_initial::BitSet
     graph_unsafe::Graph
 end
 
@@ -13,11 +13,11 @@ function pwa_lyapunov_problem(sys::PWASystem)
     domains = map(piece -> piece.domain, sys.pieces)
     dynamics = map(piece -> piece.dynamic, sys.pieces)
     graph_piece = transition_graph(sys.pieces, domains)
-    graph_initial = intersection_graph(domains, sys.initials)
+    support_initial = intersection_support(domains, sys.initial)
     graph_unsafe = transition_graph(sys.pieces, sys.unsafes)
     return PWALyapunovProblem(
-        length(sys.pieces), domains, dynamics, sys.initials, sys.unsafes,
-        graph_piece, graph_initial, graph_unsafe
+        length(sys.pieces), domains, dynamics, sys.initial, sys.unsafes,
+        graph_piece, support_initial, graph_unsafe
     )
 end
 
@@ -79,13 +79,12 @@ function add_pwa_lyapunov_unsafe_edge(
     @constraint(model, dβ == 0)
 end
 
-function add_pwa_lyapunov_initial_edge(
-        model, domains, initials, as, βs, edge, N
+function add_pwa_lyapunov_initial_support(
+        model, domains, initial, as, βs, i, N
     )
-    i1, i2 = edge.source, edge.target
-    domain1, domain2 = domains[i1], initials[i2]
-    a1 = as[i1]
-    β1 = βs[i1]
+    domain1, domain2 = domains[i], initial
+    a1 = as[i]
+    β1 = βs[i]
     da::Vector{AffExpr} = a1
     dβ::AffExpr = β1
     add_lagrange_set!(model, da, dβ, halfspaces(domain1), N)
@@ -97,7 +96,7 @@ end
 function pwa_lyapunov_model(prob::PWALyapunovProblem, rmax, N, solver)
     domains = prob.domains
     dynamics = prob.dynamics
-    initials = prob.initials
+    initial = prob.initial
     unsafes = prob.unsafes
     model = solver()
     as = [_avar(model, N) for i = 1:prob.npiece]
@@ -112,8 +111,8 @@ function pwa_lyapunov_model(prob::PWALyapunovProblem, rmax, N, solver)
         add_pwa_lyapunov_unsafe_edge(
             model, domains, dynamics, unsafes, as, βs, r, edge, N)
     end
-    for edge in prob.graph_initial.edges
-        add_pwa_lyapunov_initial_edge(model, domains, initials, as, βs, edge, N)
+    for i in prob.support_initial
+        add_pwa_lyapunov_initial_support(model, domains, initial, as, βs, i, N)
     end
 
     @objective(model, Max, r)

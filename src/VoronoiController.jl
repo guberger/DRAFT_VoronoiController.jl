@@ -24,7 +24,7 @@ end
 
 struct PWASystem
     pieces::Vector{Piece}
-    initials::Vector{Polyhedron}
+    initial::Polyhedron
     unsafes::Vector{Polyhedron}
 end
 

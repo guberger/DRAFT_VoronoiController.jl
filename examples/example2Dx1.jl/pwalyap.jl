@@ -112,10 +112,8 @@ for piece in pieces
     scatter!([x[1]], [x[2]], mc=c)
 end
 
-initials = [VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)]
-for initial in initials
-    plot!(initial, fa=0.1, lc=nothing)
-end
+initial = VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)
+plot!(initial, fa=0.1, lc=nothing)
 
 unsafes = VC.complement(safe, lib)
 display(length(unsafes))
@@ -132,7 +130,7 @@ end
 
 plot!(xlims=(-2.05, 2.05), ylims=(-2.05, 2.05))
 
-sys = VC.PWASystem(pieces, initials, unsafes)
+sys = VC.PWASystem(pieces, initial, unsafes)
 prob = VC.pwa_lyapunov_problem(sys)
 
 iplot = rand(1:length(sys.pieces))*0
@@ -167,10 +165,9 @@ for edge in prob.graph_unsafe.edges
 end
 
 iplot = rand(1:length(sys.pieces))*0
-for edge in prob.graph_initial.edges
-    i1, i2 = edge.source, edge.target
-    i1 != iplot && continue
-    domain1, domain2 = prob.domains[i1].domain, prob.initials[i2]
+for i in prob.support_initial
+    i != iplot && continue
+    domain1, domain2 = prob.domains[i], initial
     x1 = center_of_mass(domain1)
     x2 = center_of_mass(domain2)
     plot!([x1[1], x2[1]], [x1[2], x2[2]], arrow=(style=:open))
