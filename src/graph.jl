@@ -1,35 +1,29 @@
-function _pre_image(p, dynamic)
+function _prehs(hs, dynamic)
     At, b = transpose(dynamic.A), dynamic.b
-    hs = [
-        HalfSpace(At*hs.a, hs.β - dot(hs.a, b)) for hs in halfspaces(p)
-    ]
-    return hrep(hs)
+    return [HalfSpace(At*h.a, h.β - dot(h.a, b)) for h in hs]
 end
 
-function transition_graph(pieces, unsafes, initials)
-    piece_edges = Edge[]
-    unsafe_edges = Edge[]
-    initial_edges = Edge[]
-    for (i1, piece1) in enumerate(pieces)
-        for (i2, piece2) in enumerate(pieces)
-            pre = _pre_image(piece2.domain, piece1.dynamic)
-            hit = intersect(piece1.domain, pre)
+function transition_graph(pieces, sets)
+    edges = Edge[]
+    for (i1, piece) in enumerate(pieces)
+        for (i2, set) in enumerate(sets)
+            pre = _prehs(halfspaces(set), piece.dynamic)
+            hit = intersect(piece.domain, hrep(pre))
             isempty(hit) && continue
-            push!(piece_edges, Edge(i1, i2))
-        end
-        for (i2, unsafe) in enumerate(unsafes)
-            pre = _pre_image(unsafe, piece1.dynamic)
-            hit = intersect(piece1.domain, pre)
-            isempty(hit) && continue
-            push!(unsafe_edges, Edge(i1, i2))
-        end
-        for (i2, initial) in enumerate(initials)
-            hit = intersect(piece1.domain, initial)
-            isempty(hit) && continue
-            push!(initial_edges, Edge(i1, i2))
+            push!(edges, Edge(i1, i2))
         end
     end
-    return Graph(
-        pieces, unsafes, initials, piece_edges, unsafe_edges, initial_edges
-    )
+    return Graph(edges)
+end
+
+function intersection_graph(sets1, sets2)
+    edges = Edge[]
+    for (i1, set1) in enumerate(sets1)
+        for (i2, set2) in enumerate(sets2)
+            hit = intersect(set1, hrep(set2))
+            isempty(hit) && continue
+            push!(edges, Edge(i1, i2))
+        end
+    end
+    return Graph(edges)
 end

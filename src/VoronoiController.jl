@@ -12,11 +12,6 @@ const Polyhedron = DefaultPolyhedron{
 
 _hot(α, i, N) = [j == i ? α : zero(α) for j = 1:N]
 
-struct Edge
-    source::Int
-    target::Int
-end
-
 struct Dynamic
     A::Matrix{Float64}
     b::Vector{Float64}
@@ -27,17 +22,24 @@ struct Piece
     dynamic::Dynamic
 end
 
-struct Graph
+struct PWASystem
     pieces::Vector{Piece}
-    unsafes::Vector{Polyhedron}
     initials::Vector{Polyhedron}
-    piece_edges::Vector{Edge}
-    unsafe_edges::Vector{Edge}
-    initial_edges::Vector{Edge}
+    unsafes::Vector{Polyhedron}
 end
 
-include("partition.jl")
+struct Edge
+    source::Int
+    target::Int
+end
+
+struct Graph
+    edges::Vector{Edge}
+end
+
+include("polyhedra.jl")
 include("graph.jl")
-include("lyapunov.jl")
+include("pwalyapunov.jl")
+# include("pwclyapunov.jl")
 
 end # module VoronoiController

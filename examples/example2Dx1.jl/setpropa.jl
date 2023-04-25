@@ -74,7 +74,7 @@ sets = [VC.rectangle(
 nstep = 100
 for istep = 1:nstep
     isempty(sets) && break
-    plt = plot(xlabel="x1", ylabel="x2")
+    plot(xlabel="x1", ylabel="x2")
     for cell in cells
         plot!(cell, fc=nothing, lc=:red)
     end
@@ -113,7 +113,8 @@ for istep = 1:nstep
     for set in new_sets
         plot!(set, fc=nothing, lc=:blue)
     end
-    savefig(string(@__DIR__, "/data/set_", @sprintf("%03i", istep), ".png"))
+    fname = string("setpropa_", @sprintf("%03i", istep), ".png")
+    savefig(string(@__DIR__, "/data/", fname))
     global sets = new_sets
 end
 

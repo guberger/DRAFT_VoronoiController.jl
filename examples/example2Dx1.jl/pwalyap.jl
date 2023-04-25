@@ -138,50 +138,51 @@ end
 
 plot!(xlims=(-2.05, 2.05), ylims=(-2.05, 2.05))
 
-graph = VC.transition_graph(pieces, unsafes, initials)
+sys = VC.PWASystem(pieces, initials, unsafes)
+prob = VC.pwa_lyapunov_problem(sys)
 
-iplot = rand(1:length(graph.pieces))*0
-for edge in graph.piece_edges
+iplot = rand(1:length(sys.pieces))*0
+for edge in prob.graph_piece.edges
     i1, i2 = edge.source, edge.target
     i1 != iplot && continue
-    cell1, cell2 = graph.pieces[i1].domain, graph.pieces[i2].domain
-    dynamic1 = graph.pieces[i1].dynamic
-    postcell1 = Polyhedra.translate(dynamic1.A*cell1, dynamic1.b)
-    plot!(postcell1, fc=nothing)
-    x1 = center_of_mass(cell1)
-    continue
+    domain1, domain2 = prob.domains[i1], prob.domains[i2]
+    dynamic = prob.dynamics[i1]
+    post = Polyhedra.translate(dynamic.A*domain1, dynamic.b)
+    plot!(post, fc=nothing)
+    x1 = center_of_mass(domain1)
+    # continue
     if i1 == i2
         scatter!([x1[1]], [x1[2]], shape=:xcross, ms=5, msw=3)
     else
-        x2 = center_of_mass(cell2)
+        x2 = center_of_mass(domain2)
         plot!([x1[1], x2[1]], [x1[2], x2[2]], arrow=(style=:closed))
     end
 end
 
-iplot = rand(1:length(graph.pieces))*0
-for edge in graph.unsafe_edges
+iplot = rand(1:length(sys.pieces))*0
+for edge in prob.graph_unsafe.edges
     i1, i2 = edge.source, edge.target
     i1 != iplot && continue
-    cell1, cell2 = graph.pieces[i1].domain, graph.unsafes[i2]
-    dynamic1 = graph.pieces[i1].dynamic
-    postcell1 = Polyhedra.translate(dynamic1.A*cell1, dynamic1.b)
-    plot!(postcell1, fc=nothing)
-    x1 = center_of_mass(cell1)
-    x2 = center_of_mass(cell2)
+    domain1, domain2 = prob.domains[i1].domain, prob.unsafes[i2]
+    dynamic = prob.dynamics[i1]
+    post = Polyhedra.translate(dynamic.A*domain1, dynamic.b)
+    plot!(post, fc=nothing)
+    x1 = center_of_mass(domain1)
+    x2 = center_of_mass(domain2)
     plot!([x1[1], x2[1]], [x1[2], x2[2]], arrow=(style=:open))
 end
 
-iplot = rand(1:length(graph.pieces))*0
-for edge in graph.initial_edges
+iplot = rand(1:length(sys.pieces))*0
+for edge in prob.graph_initial.edges
     i1, i2 = edge.source, edge.target
     i1 != iplot && continue
-    cell1, cell2 = graph.pieces[i1].domain, graph.initials[i2]
-    x1 = center_of_mass(cell1)
-    x2 = center_of_mass(cell2)
+    domain1, domain2 = prob.domains[i1].domain, prob.initials[i2]
+    x1 = center_of_mass(domain1)
+    x2 = center_of_mass(domain2)
     plot!([x1[1], x2[1]], [x1[2], x2[2]], arrow=(style=:open))
 end
 
-model, as_var, βs_var, r_var = VC.pwa_lyapunov_model(graph, 1e3, N, solver)
+model, as_var, βs_var, r_var = VC.pwa_lyapunov_model(prob, 1e3, N, solver)
 
 optimize!(model)
 
@@ -193,8 +194,8 @@ as = map(a -> value.(a), as_var)
 
 ymin = +Inf
 ymax = -Inf
-for (i, piece) in enumerate(graph.pieces)
-    points = Polyhedra.points(vrep(piece.domain))
+for (i, domain) in enumerate(prob.domains)
+    points = Polyhedra.points(vrep(domain))
     ylocmax = maximum(x -> dot(as[i], x) + βs[i], points)
     ylocmin = minimum(x -> dot(as[i], x) + βs[i], points)
     global ymin, ymax = min(ymin, ylocmin), max(ymax, ylocmax)
@@ -202,9 +203,9 @@ end
 display((ymin, ymax))
 
 nlev = 50
-for (i, piece) in enumerate(graph.pieces)
+for (i, domain) in enumerate(prob.domains)
     # continue
-    points = Polyhedra.points(vrep(piece.domain))
+    points = Polyhedra.points(vrep(domain))
     ylocmax = maximum(x -> dot(as[i], x) + βs[i], points)
     ylocmin = minimum(x -> dot(as[i], x) + βs[i], points)
     x1min, x2min = minimum(x -> x[1], points), minimum(x -> x[2], points)
@@ -219,37 +220,38 @@ for (i, piece) in enumerate(graph.pieces)
             HalfSpace(+as[i], +levs[ilev + 1] - βs[i]),
             HalfSpace(-as[i], -levs[ilev + 0] + βs[i])
         ])
-        p = intersect(piece.domain, H)
+        p = intersect(domain, H)
         isempty(p) && continue
         midlev = 0.5*(levs[ilev] + levs[ilev + 1])
         plot!(p, fill_z=midlev, fc=cgrad(scale=(ymin, ymax)), line_z=midlev)
     end
 end
 
-for (i, piece) in enumerate(graph.pieces)
+for (i, domain) in enumerate(prob.domains)
     # positive: hatched
     # continue
     H = hrep([HalfSpace(-as[i], 0 + βs[i])])
-    p = intersect(piece.domain, H)
+    p = intersect(domain, H)
     isempty(p) && continue
     plot!(p, lw=0, fc=:green, fillstyle=:/)
 end
 
-for (i, piece) in enumerate(graph.pieces)
+for (i, domain) in enumerate(prob.domains)
     # negative: image
+    # continue
     H = hrep([HalfSpace(+as[i], 0 - βs[i])])
-    p = intersect(piece.domain, H)
+    p = intersect(domain, H)
     isempty(p) && continue
-    dynamic = graph.pieces[i].dynamic
-    postp = Polyhedra.translate(dynamic.A*p, dynamic.b)
-    plot!(postp, fc=nothing)
+    dynamic = prob.dynamics[i]
+    post = Polyhedra.translate(dynamic.A*p, dynamic.b)
+    plot!(post, fc=nothing)
 end
 
-for edge in graph.unsafe_edges
+for edge in prob.graph_unsafe.edges
     display((as[edge.source], βs[edge.source]))
 end
 
-savefig(string(@__DIR__, "/data/lyap.png"))
+savefig(string(@__DIR__, "/data/pwalyap.png"))
 display(plt)
 
 end # module
