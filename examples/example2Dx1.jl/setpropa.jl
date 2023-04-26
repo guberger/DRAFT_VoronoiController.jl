@@ -60,10 +60,6 @@ for (point, A, b) in samples
     push!(pieces, VC.Piece(cells[iok], VC.Dynamic(A, b)))
 end
 
-function sequential_complement(hs::Vector{HalfSpace}, lib)
-    
-end
-
 terminal = VC.rectangle(
     env["termSet"]["lb"] .- 0.01, env["termSet"]["ub"] .+ 0.01, lib
 )
@@ -127,7 +123,7 @@ for istep = 1:nstep
     for set in new_sets
         plot!(set, fc=nothing, lc=:blue)
     end
-    fname = string("setpropa_", @sprintf("%03i", istep), ".png")
+    fname = string("setpropa/", @sprintf("%03i", istep), ".png")
     savefig(string(@__DIR__, "/data/", fname))
     global sets = new_sets
 end

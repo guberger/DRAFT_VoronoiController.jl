@@ -34,7 +34,7 @@ struct Edge
 end
 
 struct Graph
-    edges::Vector{Edge}
+    edges::Set{Edge}
 end
 
 include("polyhedra.jl")

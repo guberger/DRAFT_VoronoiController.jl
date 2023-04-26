@@ -24,7 +24,7 @@ function voronoi_partition(points, lib)
     return cells
 end
 
-function complement(p, lib)
+function complement(p)
     ps = Polyhedron[]
     hs = halfspaces(p)
     for id in Iterators.product([(0, 1) for i in eachindex(hs)]...)
@@ -37,7 +37,7 @@ function complement(p, lib)
                 push!(H, HalfSpace(+h.a, +h.β))
             end
         end
-        p = polyhedron(hrep(H), lib)
+        p = polyhedron(hrep(H), library(p))
         removehredundancy!(p)
         isempty(p) && continue
         push!(ps, p)

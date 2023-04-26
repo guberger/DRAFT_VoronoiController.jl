@@ -65,7 +65,7 @@ end
 terminal = VC.rectangle(env["termSet"]["lb"], env["termSet"]["ub"], lib)
 plot!(terminal, fa=0.1)
 
-transients = VC.complement(terminal, lib)
+transients = VC.complement(terminal)
 old_pieces = pieces
 pieces = VC.Piece[]
 for old_piece in old_pieces
@@ -115,7 +115,7 @@ end
 initial = VC.rectangle(env["initSet"]["lb"], env["initSet"]["ub"], lib)
 plot!(initial, fa=0.1, lc=nothing)
 
-unsafes = VC.complement(safe, lib)
+unsafes = VC.complement(safe)
 display(length(unsafes))
 frame = VC.rectangle([-2, -2], [2, 2], lib)
 for unsafe in unsafes
@@ -155,7 +155,7 @@ iplot = rand(1:length(sys.pieces))*0
 for edge in prob.graph_unsafe.edges
     i1, i2 = edge.source, edge.target
     i1 != iplot && continue
-    domain1, domain2 = prob.domains[i1].domain, prob.unsafes[i2]
+    domain1, domain2 = prob.domains[i1], prob.unsafes[i2]
     dynamic = prob.dynamics[i1]
     post = Polyhedra.translate(dynamic.A*domain1, dynamic.b)
     plot!(post, fc=nothing)
@@ -195,15 +195,10 @@ display((ymin, ymax))
 
 nlev = 50
 for (i, domain) in enumerate(prob.domains)
-    # continue
+    # break
     points = Polyhedra.points(vrep(domain))
     ylocmax = maximum(x -> dot(as[i], x) + βs[i], points)
     ylocmin = minimum(x -> dot(as[i], x) + βs[i], points)
-    x1min, x2min = minimum(x -> x[1], points), minimum(x -> x[2], points)
-    x1max, x2max = maximum(x -> x[1], points), maximum(x -> x[2], points)
-    rad = max(x1max - x1min, x2max - x2min)
-    # nlevloc = ylocmin < ylocmax - (ymax - ymin)/1e3 ? ceil(Int, rad/0.1) : 1
-    # levs = range(ylocmin, ylocmax, length=nlevloc + 1)
     nlevloc = nlev
     levs = range(ymin, ymax, length=nlevloc + 1)
     for ilev in 1:nlevloc
@@ -220,7 +215,7 @@ end
 
 for (i, domain) in enumerate(prob.domains)
     # positive: hatched
-    # continue
+    # break
     H = hrep([HalfSpace(-as[i], 0 + βs[i])])
     p = intersect(domain, H)
     isempty(p) && continue
@@ -229,7 +224,7 @@ end
 
 for (i, domain) in enumerate(prob.domains)
     # negative: image
-    # continue
+    # break
     H = hrep([HalfSpace(+as[i], 0 - βs[i])])
     p = intersect(domain, H)
     isempty(p) && continue
@@ -242,7 +237,7 @@ for edge in prob.graph_unsafe.edges
     display((as[edge.source], βs[edge.source]))
 end
 
-savefig(string(@__DIR__, "/data/pwalyap.png"))
+savefig(string(@__DIR__, "/data/pwalyap/001.png"))
 display(plt)
 
 end # module

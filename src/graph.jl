@@ -4,7 +4,7 @@ function _prehs(hs, dynamic)
 end
 
 function transition_graph(pieces, sets)
-    edges = Edge[]
+    edges = Set{Edge}()
     for (i1, piece) in enumerate(pieces)
         for (i2, set) in enumerate(sets)
             pre = _prehs(halfspaces(set), piece.dynamic)
@@ -17,7 +17,7 @@ function transition_graph(pieces, sets)
 end
 
 function intersection_graph(sets1, sets2)
-    edges = Edge[]
+    edges = Set{Edge}()
     for (i2, set2) in enumerate(sets2)
         supp = intersection_support(sets1, set2)
         for i1 in supp
